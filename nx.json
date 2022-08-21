@@ -27,5 +27,6 @@
   "workspaceLayout": {
     "appsDir": "packages",
     "libsDir": "packages"
-  }
+  },
+  "defaultProject": "basic-example-1"
 }
