@@ -6,5 +6,7 @@ export * from "./lib/event-bus/event-bus";
 export * from "./lib/local-message-bus/local-message-bus";
 export * from "./lib/logging/logger";
 export * from "./lib/logging/console-logger";
+export * from "./lib/logging/logger-factory";
+export * from "./lib/saga/saga-orchestrator";
 export * from "./lib/interface";
 export * from "./lib/utils";

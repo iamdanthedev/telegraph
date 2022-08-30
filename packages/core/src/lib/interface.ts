@@ -3,6 +3,7 @@ import { TelegraphContext } from './telegraph-context';
 export interface BaseMessage {
   messageId: string;
   type: string;
+  metadata: MessageMetadata;
 }
 
 export type MessageMetadata = Record<string, string | number>;
@@ -12,6 +13,12 @@ export interface CommandMessage<T = unknown> extends BaseMessage {
   commandName: string;
   payload: T;
   metadata: MessageMetadata;
+}
+
+export interface CommandMessageInput {
+  commandName: string;
+  payload?: object;
+  metadata?: MessageMetadata;
 }
 
 export interface EventMessage<T = unknown> extends BaseMessage {
@@ -27,6 +34,7 @@ export interface CommandResultMessage<T = unknown> extends BaseMessage {
   commandMessageId: string;
   payload: T;
   exception: Error | null;
+  isException: boolean;
 }
 
 export type CommandHandler<T = unknown> = (

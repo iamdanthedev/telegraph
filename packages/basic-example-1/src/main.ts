@@ -1,9 +1,27 @@
-import { createTelegraphContext } from '@telegraph/core';
+import {
+  ConsoleLogger,
+  ConsoleLoggerFactory,
+  createTelegraphContext,
+} from '@telegraph/core';
+import { MemoryStore, SagaOrchestrator } from '@telegraph/sagas';
 import { LogToConsoleCommand } from './app/command/log-to-console.command';
 import { LogToConsoleHandler } from './app/handler/log-to-console.handler';
+import { consoleDialogSagaDefinition } from './app/sagas/console-dialog.saga';
 
 async function main() {
-  const context = createTelegraphContext();
+  const context = createTelegraphContext({
+    isGlobal: true,
+    logger: new ConsoleLogger(),
+  });
+
+  const loggerFactory = new ConsoleLoggerFactory();
+
+  const sagaStore = new MemoryStore();
+  const sagaOrchestrator = new SagaOrchestrator(
+    context,
+    sagaStore,
+    loggerFactory
+  );
 
   const logToConsoleHandler = new LogToConsoleHandler();
 
@@ -53,6 +71,11 @@ async function main() {
       },
     }
   );
+
+  // run saga #1
+  sagaOrchestrator.register(consoleDialogSagaDefinition);
+
+  sagaOrchestrator.createInstance(consoleDialogSagaDefinition.sagaId)
 
   for (let i = 0; i < 10; i++) {
     console.log('waiting...');

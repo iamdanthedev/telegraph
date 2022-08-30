@@ -3,6 +3,7 @@
   "version": 2,
   "projects": {
     "basic-example-1": "packages/basic-example-1",
-    "core": "packages/core"
+    "core": "packages/core",
+    "sagas": "packages/sagas"
   }
 }

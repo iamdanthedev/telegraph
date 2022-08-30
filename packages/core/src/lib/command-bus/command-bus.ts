@@ -53,13 +53,13 @@ export class CommandBus {
     commandName: string,
     payload: T,
     metadata: MessageMetadata,
-    observer: Partial<Observer<CommandResultMessage<R>>>
+    observer: Partial<Observer<CommandResultMessage<R>>> | undefined
   ): void;
   publish<T = unknown, R = unknown>(
     commandName: string,
     payload: T,
     metadata?: MessageMetadata,
-    observer?: Partial<Observer<CommandResultMessage<R>>>
+    observer?: Partial<Observer<CommandResultMessage<R>>> | undefined
   ): void {
     metadata = metadata || {};
 

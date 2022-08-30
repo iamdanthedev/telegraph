@@ -10,13 +10,13 @@
     "uuid": "^8.3.2"
   },
   "devDependencies": {
-    "@nrwl/cli": "14.5.8",
-    "@nrwl/eslint-plugin-nx": "14.5.8",
-    "@nrwl/jest": "14.5.8",
-    "@nrwl/js": "14.5.8",
-    "@nrwl/linter": "14.5.8",
-    "@nrwl/node": "^14.5.8",
-    "@nrwl/workspace": "14.5.8",
+    "@nrwl/cli": "14.5.10",
+    "@nrwl/eslint-plugin-nx": "14.5.10",
+    "@nrwl/jest": "14.5.10",
+    "@nrwl/js": "14.5.10",
+    "@nrwl/linter": "14.5.10",
+    "@nrwl/node": "14.5.10",
+    "@nrwl/workspace": "14.5.10",
     "@types/jest": "27.4.1",
     "@types/node": "^18.7.8",
     "@types/uuid": "^8.3.4",
@@ -25,10 +25,11 @@
     "eslint": "~8.15.0",
     "eslint-config-prettier": "8.1.0",
     "jest": "27.5.1",
-    "nx": "14.5.8",
+    "nx": "14.5.10",
     "prettier": "^2.6.2",
     "ts-jest": "27.1.4",
     "ts-node": "10.9.1",
     "typescript": "~4.7.2"
   }
 }
+

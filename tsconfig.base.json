@@ -15,7 +15,8 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@telegraph/core": ["packages/core/src/index.ts"]
+      "@telegraph/core": ["packages/core/src/index.ts"],
+      "@telegraph/sagas": ["packages/sagas/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]
