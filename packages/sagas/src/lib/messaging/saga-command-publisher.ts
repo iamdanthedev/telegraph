@@ -2,7 +2,7 @@ import { Observer } from 'rxjs';
 import {
   CommandBus,
   CommandResultMessage,
-  ILoggerFactory,
+  LoggerFactory,
   Logger,
   MessageMetadata,
 } from '@telegraph/core';
@@ -14,7 +14,7 @@ export class SagaCommandPublisher implements ISagaCommandPublisher {
   constructor(
     private readonly commandBus: CommandBus,
     private readonly sagaInstanceDescription: SagaInstanceDescription,
-    private readonly loggerFactory: ILoggerFactory
+    private readonly loggerFactory: LoggerFactory
   ) {
     this.logger = loggerFactory.create(
       `SagaCommandPublisher [${sagaInstanceDescription.sagaId}]`

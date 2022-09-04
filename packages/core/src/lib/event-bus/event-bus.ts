@@ -3,16 +3,19 @@ import { LocalMessageBus } from '../local-message-bus/local-message-bus';
 import { EventMessage, EventHandler, MessageMetadata } from '../interface';
 import { createId } from '../utils';
 import { Logger } from '../logging/logger';
+import { LoggerFactory } from '../logging/logger-factory';
 
 export class EventBus {
+  private logger: Logger;
   private stream!: Observable<any>;
   private handlingSubscription!: Subscription;
   private handlers: Record<string, Array<EventHandler<any>>> = {};
 
   constructor(
     private readonly messageBus: LocalMessageBus,
-    private readonly logger: Logger
+    loggerFactory: LoggerFactory
   ) {
+    this.logger = loggerFactory.create('EventBus');
     this.subscribe();
   }
 

@@ -1,3 +1,4 @@
-export class LogToConsoleCommand {
-  constructor(public message: string, public shouldFail: boolean) {}
+export interface LogToConsoleCommand {
+  message: string;
+  shouldFail: boolean;
 }

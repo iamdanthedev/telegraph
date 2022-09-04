@@ -1,7 +1,7 @@
 import { Logger } from './logger';
-import { ILoggerFactory } from './logger-factory';
+import { LoggerFactory } from './logger-factory';
 
-export class ConsoleLoggerFactory implements ILoggerFactory {
+export class ConsoleLoggerFactory implements LoggerFactory {
   create(context: string): Logger {
     const logger = new ConsoleLogger();
     logger.setContext(context);
@@ -17,18 +17,18 @@ export class ConsoleLogger implements Logger {
   }
 
   debug(message: string, ...args: any[]): void {
-    console.log(this.context, message, ...args);
+    console.log('[debug]', this.context, message, ...args);
   }
 
   log(message: string, ...args: any[]): void {
-    console.log(this.context, message, ...args);
+    console.log('[log]', this.context, message, ...args);
   }
 
   warn(message: string, ...args: any[]): void {
-    console.warn(this.context, message, ...args);
+    console.warn('[warn]', this.context, message, ...args);
   }
 
   error(message: string, ...args: any[]): void {
-    console.error(this.context, message, ...args);
+    console.error('[error]', this.context, message, ...args);
   }
 }

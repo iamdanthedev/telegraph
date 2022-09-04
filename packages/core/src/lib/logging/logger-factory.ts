@@ -1,5 +1,5 @@
 import { Logger } from './logger';
 
-export interface ILoggerFactory {
+export interface LoggerFactory {
   create(context: string): Logger;
 }

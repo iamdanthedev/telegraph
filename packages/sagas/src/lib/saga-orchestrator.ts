@@ -1,6 +1,6 @@
 import { filter, Observable, Subject } from 'rxjs';
 import * as uuid from 'uuid';
-import { ILoggerFactory, TelegraphContext } from '@telegraph/core';
+import { LoggerFactory, TelegraphContext } from '@telegraph/core';
 import {
   SagaDefinition,
   SagaInstanceDescription,
@@ -21,7 +21,7 @@ export class SagaOrchestrator {
   constructor(
     private readonly context: TelegraphContext,
     private readonly store: ISagaStore,
-    private readonly loggerFactory: ILoggerFactory
+    private readonly loggerFactory: LoggerFactory
   ) {
     this.initialize();
   }
@@ -31,6 +31,30 @@ export class SagaOrchestrator {
       .asObservable()
       .pipe(filter(isSagaEventMessage))
       .subscribe((message) => this.execute(message));
+  }
+
+  async instantiate<Command = any, Phase = any, State = any>(
+    sagaId: string
+  ): Promise<SagaInstance<Command, Phase, State>> {
+    const definition = this.definitions[sagaId];
+    const sagaInstanceId = uuid.v4();
+
+    if (!definition) {
+      throw new Error('saga definition not found');
+    }
+
+    await this.store.set(sagaInstanceId, {
+      sagaId,
+      sagaInstanceId,
+      initialCommand: null,
+      state: {},
+      metadata: {},
+    });
+
+    return this.createSagaInstance<Command, Phase, State>({
+      sagaId,
+      sagaInstanceId,
+    });
   }
 
   register<Command, Phase, State>(
@@ -54,7 +78,45 @@ export class SagaOrchestrator {
     return this.sagaInstances[instanceId];
   }
 
-  private async createSagaInstance(
+  private async createSagaInstance<Command = any, Phase = any, State = any>(
+    sagaId: string
+  ): Promise<SagaInstance<any, any, any>> {
+    const definition = this.definitions[sagaId];
+
+    if (!definition) {
+      throw new Error(`Saga with id ${sagaId} not registered`);
+    }
+
+    const subject = this.createSagaSubject();
+
+    const description = new SagaInstanceDescription(sagaId, uuid.v4());
+
+    const commandPublisher = new SagaCommandPublisher(
+      this.context.commandBus,
+      description,
+      this.loggerFactory
+    );
+
+    const initialState = {
+      sagaId,
+      sagaInstanceId: description.sagaInstanceId,
+      initialCommand: null,
+      state: {},
+      metadata: {},
+    };
+
+    await this.store.set(description.sagaInstanceId, initialState);
+
+    return new SagaInstance<Command, Phase, State>(
+      definition,
+      commandPublisher,
+      subject,
+      state,
+      this.loggerFactory
+    );
+  }
+
+  private async loadSagaInstance<Command = any, Phase = any, State = any>(
     description: SagaInstanceDescription
   ): Promise<SagaInstance<any, any, any>> {
     const definition = this.definitions[description.sagaId];
@@ -73,7 +135,7 @@ export class SagaOrchestrator {
 
     const state = await this.store.get(description.sagaInstanceId);
 
-    return new SagaInstance(
+    return new SagaInstance<Command, Phase, State>(
       definition,
       commandPublisher,
       subject,

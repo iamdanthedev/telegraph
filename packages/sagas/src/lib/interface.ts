@@ -17,17 +17,18 @@ export interface SagaDefinition<Command, Phase, State> {
   steps: Array<SagaStep<Command, Phase, State>>;
 }
 
+export interface OnReplyCallback {
+  eventName: string;
+  invoke(event: SagaEventMessage, context: SagaStepContext<any, any>): Promise<any> | void;
+}
+
 export interface SagaStep<Command, Phase, State> {
   transitionTo: Phase;
   invoke(
     context: SagaStepContext<Command, State>
   ): MaybeAsync<CommandMessageInput>;
   compensate?(context: SagaStepContext<Command, State>): Promise<any> | void;
-  onReply?(
-    eventName: string,
-    event: SagaEventMessage,
-    context: SagaStepContext<Command, State>
-  ): Promise<any> | void;
+  onReplyCallbacks?: Array<OnReplyCallback>;
 }
 
 export interface SagaStepContext<Command, State> {
@@ -40,11 +41,12 @@ export interface SagaInstanceMetadata<Command, Phase> {
   initialCommand?: Command;
 }
 
-export interface SagaInstanceState {
+export interface SagaInstanceState<T = object> {
   sagaId: string;
   sagaInstanceId: string;
   metadata: SagaInstanceMetadata<any, any>;
-  state: Record<string, any>;
+  initialCommand: object | null;
+  payload: T;
 }
 
 export interface ISagaCommandPublisher {

@@ -1,4 +1,4 @@
-import { TelegraphContext } from './telegraph-context';
+import { Logger } from './logging/logger';
 
 export interface BaseMessage {
   messageId: string;
@@ -34,21 +34,34 @@ export interface CommandResultMessage<T = unknown> extends BaseMessage {
   commandMessageId: string;
   payload: T;
   exception: Error | null;
-  isException: boolean;
+  isExceptional: boolean;
 }
 
 export type CommandHandler<T = unknown> = (
   message: CommandMessage<T>,
-  context: TelegraphContext
+  context: ExecutionContext
 ) => Promise<any>;
+
+export interface ExecutionContext {
+  logger: Logger;
+  commandPublisher: CommandPublisher;
+}
 
 export type EventHandler<T = unknown> = (
   message: EventMessage<T>,
-  context: TelegraphContext
+  context: ExecutionContext
 ) => Promise<any>;
 
 export function isCommandResultMessage<T = unknown>(
   message: BaseMessage
 ): message is CommandResultMessage {
   return message.type === 'commandResult';
+}
+
+export interface CommandPublisher {
+  publish(command: CommandMessage): void;
+}
+
+export interface EventPublisher {
+  publish(command: EventMessage): void;
 }
