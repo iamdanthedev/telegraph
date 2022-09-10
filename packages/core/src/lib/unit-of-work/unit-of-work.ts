@@ -1,5 +1,5 @@
-import { LoggerFactory } from '../logging/logger-factory';
-import { CommandPublisher, EventPublisher } from "../interface";
+import { Message } from '../messaging/message';
+import { MessageHandler } from '../messaging/message-handler';
 
 export enum UnitOfWorkPhase {
   NotStarted = 'NotStarted',
@@ -8,17 +8,18 @@ export enum UnitOfWorkPhase {
   Completed = 'Completed',
 }
 
-export interface UnitOfWork {
+export interface UnitOfWork<T extends Message> {
+  message: T;
   phase: UnitOfWorkPhase;
-  run<T>(callback: UnitOfWorkCallback<T>): T;
-  commit(): Promise<void>;
-  rollback(): Promise<void>;
+  execute<R>(handler: MessageHandler<T, R>): Promise<R | null>;
+  // commit(): Promise<void>;
+  // rollback(): Promise<void>;
 }
 
-export interface UnitOfWorkExecutionContext {
-  commandPublisher: CommandPublisher;
-  eventPublisher: EventPublisher;
-  loggerFactory: LoggerFactory;
-}
+// export interface UnitOfWorkExecutionContext {
+//   commandPublisher: CommandPublisher;
+//   eventPublisher: EventPublisher;
+//   loggerFactory: LoggerFactory;
+// }
 
-export type UnitOfWorkCallback<T> = (context: UnitOfWorkExecutionContext) => T;
+export type UnitOfWorkCallback<T> = () => T;
