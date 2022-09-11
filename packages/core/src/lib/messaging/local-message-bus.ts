@@ -4,16 +4,16 @@ import { LoggerFactory } from '../logging/logger-factory';
 import { MessageBus } from './message-bus';
 import { Message } from '../messaging/message';
 import { Registration } from '../common/registration';
-import { MessageInterceptor } from './message-interceptor';
+import { MessageListener } from './message-listener';
+import { UnitOfWorkFactory } from '../unit-of-work/unit-of-work-factory';
 
 export class LocalMessageBus implements MessageBus {
   private stream: Subject<Message<any>>;
   private logger: Logger;
 
-  constructor(loggerFactory: LoggerFactory) {
+  constructor(private readonly loggerFactory: LoggerFactory, private readonly unitOfWorkFactory: UnitOfWorkFactory) {
     this.logger = loggerFactory.create('LocalMessageBus');
     this.stream = new Subject<Message<any>>();
-
     this.stream.subscribe({});
   }
 
@@ -22,7 +22,7 @@ export class LocalMessageBus implements MessageBus {
     return Promise.resolve();
   }
 
-  registerListener(listener: MessageInterceptor<any>): Registration {
+  registerListener(listener: MessageListener<any>): Registration {
     const subscription = this.stream
       .asObservable()
       .pipe(
@@ -30,7 +30,7 @@ export class LocalMessageBus implements MessageBus {
         filter((x) => listener.canHandle(x))
       )
       .subscribe({
-        next: (message) => listener.handle(message),
+        next: (message) => this.handleListener(message, listener),
       });
 
     return () => {
@@ -40,5 +40,16 @@ export class LocalMessageBus implements MessageBus {
 
   asObservable(): Observable<Message<any>> {
     return this.stream.asObservable();
+  }
+
+  private async handleListener<T>(message: Message<T>, listener: MessageListener<Message<T>>): Promise<void> {
+    const unitOfWork = this.unitOfWorkFactory.create(message);
+
+    try {
+      this.logger.debug(`Handling listener for [${message.type}:${message.messageId}]`);
+      await unitOfWork.execute(listener);
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error((err as any)?.toString());
+    }
   }
 }

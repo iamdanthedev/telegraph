@@ -31,7 +31,7 @@ export class BasicUnitOfWork<T extends Message> implements UnitOfWork<T> {
         this.phase = UnitOfWorkPhase.RollingBack;
         // this.rollback();
         this.phase = UnitOfWorkPhase.Completed;
-        return null;
+        throw err;
       }
     });
   }

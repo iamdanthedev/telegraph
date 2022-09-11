@@ -72,8 +72,9 @@ export class SimpleCommandBus implements CommandBus {
       this.logger.debug(`Publishing CommandResult for [${command.commandName}]`);
       await this.messageBus.publish(commandResultMessage);
     } catch (err) {
+      this.logger.debug(`Execution failed for [${command.commandName}]`);
       const error = err instanceof Error ? err : new Error((err as any)?.toString());
-      const commandResultMessage = asCommandResultMessage(command.commandName, error);
+      const commandResultMessage = asCommandResultMessage(command.messageId, error);
       await this.messageBus.publish(commandResultMessage);
     }
   }

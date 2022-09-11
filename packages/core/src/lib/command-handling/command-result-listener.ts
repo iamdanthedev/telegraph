@@ -1,6 +1,6 @@
 import { CommandResultMessage } from './command-result-message';
 import { CommandMessage } from './command-message';
-import { MessageInterceptor } from '../messaging/message-interceptor';
+import { MessageListener } from '../messaging/message-listener';
 import { MessageType } from '../common/message-type';
 
 export interface CommandResultInterceptorParams<T> {
@@ -11,7 +11,7 @@ export interface CommandResultInterceptorParams<T> {
   onError: (error: Error) => Promise<void> | void;
 }
 
-export class CommandResultInterceptor<T> implements MessageInterceptor<CommandResultMessage<any>> {
+export class CommandResultListener<T> implements MessageListener<CommandResultMessage<any>> {
   constructor(private readonly params: CommandResultInterceptorParams<T>) {}
 
   async handle(message: CommandResultMessage<T>) {
