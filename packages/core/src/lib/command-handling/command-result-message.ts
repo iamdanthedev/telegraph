@@ -16,7 +16,7 @@ export function asCommandResultMessage<R>(
       messageId: createId(),
       type: MessageType.CommandResult,
       isExceptional: true,
-      exception: messageOrError,
+      exceptionDetails: messageOrError?.toString(),
       payload: null,
       metadata: {},
     };
@@ -27,7 +27,7 @@ export function asCommandResultMessage<R>(
     messageId: createId(),
     type: MessageType.CommandResult,
     isExceptional: false,
-    exception: null,
+    exceptionDetails: null,
     payload: messageOrError,
     metadata: {},
   };
