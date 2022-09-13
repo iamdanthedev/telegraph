@@ -20,16 +20,13 @@ app.get('/api/log-to-console', async (req, res, next) => {
   const logToConsoleCommandResultInterceptor = new CommandResultListener({
     command: logToConsoleCommandMessage,
     timeout: 1000,
-    onIntercept: (commandResult) => {
-      console.log('INTERCEPTED', commandResult);
+    onMessage: (commandResult) => {
       res.json(commandResult);
     },
     onTimeout: () => {
       res.status(500).json({ error: 'Command timed out' });
-      console.log('TIMEOUT');
     },
     onError: (error) => {
-      console.log('ERROR', error);
       res.status(500).json({ error: error?.message });
     },
   });

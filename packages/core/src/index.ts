@@ -11,6 +11,10 @@ export * from './lib/command-handling/command-gateway';
 export * from './lib/common/registration';
 export * from './lib/common/message-type';
 
+export * from "./lib/event-handling/event-message";
+export * from "./lib/event-handling/event-bus";
+export * from "./lib/event-handling/simple-event-bus";
+
 export * from './lib/logging/logger';
 export * from './lib/logging/logger-factory';
 export * from './lib/logging/console-logger';

@@ -30,7 +30,7 @@ export class CommandGateway {
       const listener = new CommandResultListener({
         command,
         timeout: options?.timeout ?? 10000,
-        onIntercept: resolve,
+        onMessage: resolve,
         onTimeout: () => {
           reject(new Error(`Command [${commandName}] timed out`));
         },

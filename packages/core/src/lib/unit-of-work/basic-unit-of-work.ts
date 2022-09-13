@@ -26,10 +26,20 @@ export class BasicUnitOfWork<T extends Message> implements UnitOfWork<T> {
     return unitOfWorkStorage.run(this, async () => {
       this.phase = UnitOfWorkPhase.Started;
       try {
-        return await handler.handle(this.message);
+        this.logger.debug('Executing unit of work handler');
+        const result = await handler.handle(this.message);
+
+        this.phase = UnitOfWorkPhase.Committing;
+        this.commit();
+
+        this.phase = UnitOfWorkPhase.Completed;
+        this.logger.log('Unit of work completed');
+
+        return result;
       } catch (err) {
+        this.logger.debug('Error occurred during unit of work handler execution');
         this.phase = UnitOfWorkPhase.RollingBack;
-        // this.rollback();
+        this.rollback();
         this.phase = UnitOfWorkPhase.Completed;
         throw err;
       }
@@ -51,4 +61,12 @@ export class BasicUnitOfWork<T extends Message> implements UnitOfWork<T> {
   //
   //   this.phase = UnitOfWorkPhase.RollingBack;
   // }
+
+  private commit() {
+    this.logger.debug('Committing unit of work');
+  }
+
+  private rollback() {
+    this.logger.debug('Rolling back unit of work');
+  }
 }

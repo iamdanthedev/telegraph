@@ -4,6 +4,7 @@ import { MessageHandler } from '../messaging/message-handler';
 export enum UnitOfWorkPhase {
   NotStarted = 'NotStarted',
   Started = 'Started',
+  Committing = 'Committing',
   RollingBack = 'RollingBack',
   Completed = 'Completed',
 }

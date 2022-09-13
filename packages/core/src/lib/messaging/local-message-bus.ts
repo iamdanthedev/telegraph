@@ -50,6 +50,7 @@ export class LocalMessageBus implements MessageBus {
       await unitOfWork.execute(listener);
     } catch (err) {
       const error = err instanceof Error ? err : new Error((err as any)?.toString());
+      listener.
     }
   }
 }

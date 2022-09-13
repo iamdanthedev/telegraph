@@ -53,8 +53,13 @@ export class SimpleCommandBus implements CommandBus {
     return () => this.handlers[commandName].splice(this.handlers[commandName].indexOf(handler), 1);
   }
 
-  async dispatch<C, R>(command: CommandMessage<C>): Promise<void> {
+  async dispatch<C>(command: CommandMessage<C>): Promise<void> {
     this.logger.debug(`Dispatching command [${command.commandName}]`);
+
+    if (!isCommandMessage(command)) {
+      throw new Error('Command is not a CommandMessage');
+    }
+
     await this.messageBus.publish(command);
   }
 
