@@ -5,7 +5,7 @@ import {
   LocalMessageBus,
   SimpleCommandBus,
 } from '@telegraph/core';
-import { LogToConsoleCommandHandler } from './command/log-to-console.command';
+import { LogToConsoleCommandHandler } from "./command/log-to-console-command.handler";
 
 export function bootstrapTelegraph() {
   const loggerFactory = new ConsoleLoggerFactory();

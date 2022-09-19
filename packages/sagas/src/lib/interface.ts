@@ -22,6 +22,8 @@ export interface OnReplyCallback {
   invoke(event: SagaEventMessage, context: SagaStepContext<any, any>): Promise<any> | void;
 }
 
+export interface
+
 export interface SagaStep<Command, Phase, State> {
   transitionTo: Phase;
   invoke(

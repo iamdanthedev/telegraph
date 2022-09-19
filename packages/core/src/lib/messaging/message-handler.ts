@@ -1,6 +1,6 @@
-import { Message } from "./message";
+import { Message } from './message';
 
-export interface MessageHandler<T extends Message<any>, R = any> {
-  handle(message: T): Promise<R> | R;
-  canHandle(message: T): boolean;
+export interface MessageHandlerDefinition<T extends Message<any> = Message<any>> {
+  canHandleCallback(message: T): boolean;
+  handleCallback(message: T): Promise<any> | any;
 }

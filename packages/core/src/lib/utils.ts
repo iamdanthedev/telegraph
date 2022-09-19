@@ -1,5 +1,7 @@
 import * as uuid from 'uuid';
 
+export type AsyncFunction<R = any> = () => Promise<R>;
+
 export function createId() {
   return uuid.v4();
 }

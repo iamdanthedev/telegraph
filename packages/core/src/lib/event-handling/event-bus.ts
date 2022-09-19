@@ -1,8 +1,8 @@
 import { EventMessage } from './event-message';
-import { MessageHandler } from '../messaging/message-handler';
 import { Registration } from '../common/registration';
+import { EventHandlerDefinition } from './event-handler-definition';
 
 export interface EventBus {
   dispatch<T>(event: EventMessage<T>): Promise<void>;
-  subscribe<T extends EventMessage>(eventName: string, handler: MessageHandler<T, any>): Registration;
+  subscribe<T extends EventMessage>(eventName: string, handlerDefinition: EventHandlerDefinition): Registration;
 }

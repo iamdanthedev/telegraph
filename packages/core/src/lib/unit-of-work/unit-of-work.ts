@@ -1,5 +1,5 @@
 import { Message } from '../messaging/message';
-import { MessageHandler } from '../messaging/message-handler';
+import { AsyncFunction } from '../utils';
 
 export enum UnitOfWorkPhase {
   NotStarted = 'NotStarted',
@@ -9,18 +9,19 @@ export enum UnitOfWorkPhase {
   Completed = 'Completed',
 }
 
+export type UnitOfWorkCallback<T> = () => Promise<T>;
+
 export interface UnitOfWork<T extends Message> {
+  id: string;
   message: T;
   phase: UnitOfWorkPhase;
-  execute<R>(handler: MessageHandler<T, R>): Promise<R | null>;
+
+  start(): void;
+  execute<R>(callback: UnitOfWorkCallback<R>): Promise<R>;
   // commit(): Promise<void>;
   // rollback(): Promise<void>;
+
+  onCommit(handler: AsyncFunction): void;
+  onRollback(handler: AsyncFunction): void;
+  onCleanup(handler: AsyncFunction): void;
 }
-
-// export interface UnitOfWorkExecutionContext {
-//   commandPublisher: CommandPublisher;
-//   eventPublisher: EventPublisher;
-//   loggerFactory: LoggerFactory;
-// }
-
-export type UnitOfWorkCallback<T> = () => T;

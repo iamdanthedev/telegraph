@@ -1,10 +1,10 @@
 import { filter, mergeMap, Subscription } from 'rxjs';
 import { CommandMessage, isCommandMessage } from './command-message';
 import { asCommandResultMessage } from './command-result-message';
+import { CommandHandlerDefinition } from './command-handler';
 import { MessageBus } from '../messaging/message-bus';
 import { CommandBus } from './command-bus';
 import { Registration } from '../common/registration';
-import { MessageHandler } from '../messaging/message-handler';
 import { assertNonNull } from '../utils';
 import { Logger } from '../logging/logger';
 import { LoggerFactory } from '../logging/logger-factory';
@@ -13,7 +13,7 @@ import { UnitOfWorkFactory } from '../unit-of-work/unit-of-work-factory';
 export class SimpleCommandBus implements CommandBus {
   private logger: Logger;
   private handleStream: Subscription;
-  private handlers: Record<string, Array<MessageHandler<CommandMessage, any>>> = {};
+  private handlers: Record<string, Array<CommandHandlerDefinition>> = {};
 
   constructor(
     private readonly messageBus: MessageBus,
@@ -43,7 +43,7 @@ export class SimpleCommandBus implements CommandBus {
       });
   }
 
-  subscribe<T extends CommandMessage>(commandName: string, handler: MessageHandler<T, any>): Registration {
+  subscribe<T extends CommandMessage>(commandName: string, handler: CommandHandlerDefinition): Registration {
     this.logger.debug(`Registering command handler for [${commandName}]`);
     assertNonNull(handler, 'handler cannot be null');
 
@@ -63,16 +63,16 @@ export class SimpleCommandBus implements CommandBus {
     await this.messageBus.publish(command);
   }
 
-  private getHandlers(commandName: string): Array<MessageHandler<CommandMessage, any>> {
+  private getHandlers(commandName: string): Array<CommandHandlerDefinition> {
     return this.handlers[commandName] || [];
   }
 
-  private async handle(command: CommandMessage<any>, handler: MessageHandler<CommandMessage<any>, any>) {
+  private async handle(command: CommandMessage<any>, handler: CommandHandlerDefinition) {
     const unitOfWork = this.unitOfWorkFactory.create(command);
 
     try {
       this.logger.debug(`Executing command handler for [${command.commandName}]`);
-      const result = await unitOfWork.execute(handler);
+      const result = await unitOfWork.execute(() => handler.handleCallback(command));
       const commandResultMessage = asCommandResultMessage(command.messageId, result);
       this.logger.debug(`Publishing CommandResult for [${command.commandName}]`);
       await this.messageBus.publish(commandResultMessage);
