@@ -4,5 +4,5 @@ import { EventHandlerDefinition } from './event-handler-definition';
 
 export interface EventBus {
   dispatch<T>(event: EventMessage<T>): Promise<void>;
-  subscribe<T extends EventMessage>(eventName: string, handlerDefinition: EventHandlerDefinition): Registration;
+  subscribe<T extends EventMessage>(handlerDefinition: EventHandlerDefinition): Registration;
 }

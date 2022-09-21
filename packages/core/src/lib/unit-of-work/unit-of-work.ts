@@ -18,8 +18,6 @@ export interface UnitOfWork<T extends Message> {
 
   start(): void;
   execute<R>(callback: UnitOfWorkCallback<R>): Promise<R>;
-  // commit(): Promise<void>;
-  // rollback(): Promise<void>;
 
   onCommit(handler: AsyncFunction): void;
   onRollback(handler: AsyncFunction): void;

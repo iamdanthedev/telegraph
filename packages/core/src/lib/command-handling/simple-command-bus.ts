@@ -1,7 +1,7 @@
 import { filter, mergeMap, Subscription } from 'rxjs';
 import { CommandMessage, isCommandMessage } from './command-message';
 import { asCommandResultMessage } from './command-result-message';
-import { CommandHandlerDefinition } from './command-handler';
+import { CommandHandlerDefinition } from './command-handler-definition';
 import { MessageBus } from '../messaging/message-bus';
 import { CommandBus } from './command-bus';
 import { Registration } from '../common/registration';
@@ -43,14 +43,16 @@ export class SimpleCommandBus implements CommandBus {
       });
   }
 
-  subscribe<T extends CommandMessage>(commandName: string, handler: CommandHandlerDefinition): Registration {
+  subscribe<T extends CommandMessage>(definition: CommandHandlerDefinition): Registration {
+    const { commandName } = definition;
+
     this.logger.debug(`Registering command handler for [${commandName}]`);
-    assertNonNull(handler, 'handler cannot be null');
+    assertNonNull(definition, 'handler cannot be null');
 
     this.handlers[commandName] = this.handlers[commandName] || [];
-    this.handlers[commandName].push(handler);
+    this.handlers[commandName].push(definition);
 
-    return () => this.handlers[commandName].splice(this.handlers[commandName].indexOf(handler), 1);
+    return () => this.handlers[commandName].splice(this.handlers[commandName].indexOf(definition), 1);
   }
 
   async dispatch<C>(command: CommandMessage<C>): Promise<void> {

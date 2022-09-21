@@ -4,7 +4,7 @@ import { LoggerFactory } from '../logging/logger-factory';
 import { MessageBus } from './message-bus';
 import { Message } from '../messaging/message';
 import { Registration } from '../common/registration';
-import { MessageListener } from './message-listener';
+import { MessageListenerDefinition } from './message-listener-definition';
 import { UnitOfWorkFactory } from '../unit-of-work/unit-of-work-factory';
 
 export class LocalMessageBus implements MessageBus {
@@ -22,11 +22,11 @@ export class LocalMessageBus implements MessageBus {
     return Promise.resolve();
   }
 
-  registerListener(listener: MessageListener<any>): Registration {
+  registerListener<T extends Message = any>(listener: MessageListenerDefinition<T>): Registration {
     const subscription = this.stream
       .asObservable()
       .pipe(
-        filter((x) => x.type === listener.handlesMessageType()),
+        filter((x) => x.type === listener.canHandleMessageType()),
         filter((x) => listener.canHandle(x))
       )
       .subscribe({
@@ -42,15 +42,15 @@ export class LocalMessageBus implements MessageBus {
     return this.stream.asObservable();
   }
 
-  private async handleListener<T>(message: Message<T>, listener: MessageListener<Message<T>>): Promise<void> {
+  private async handleListener<T>(message: Message<T>, listener: MessageListenerDefinition<Message<T>>): Promise<void> {
     const unitOfWork = this.unitOfWorkFactory.create(message);
 
     try {
       this.logger.debug(`Handling listener for [${message.type}:${message.messageId}]`);
-      await unitOfWork.execute(listener);
+      await unitOfWork.execute(() => listener.handle(message));
     } catch (err) {
       const error = err instanceof Error ? err : new Error((err as any)?.toString());
-      listener.
+      this.logger.error(`Error handling listener for [${message.type}:${message.messageId}]`, error);
     }
   }
 }

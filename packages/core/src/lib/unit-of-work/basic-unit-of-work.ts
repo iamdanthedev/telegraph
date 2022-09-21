@@ -18,6 +18,8 @@ export class BasicUnitOfWork<T extends Message> implements UnitOfWork<T> {
     this.id = createId();
     this.logger = loggerFactory.create(`BasicUnitOfWork [${this.id}]`);
     this.phase = UnitOfWorkPhase.NotStarted;
+
+    this.logger.debug(`Created for message [${message.type}:${message.messageId}]`);
   }
 
   async execute<R>(handler: UnitOfWorkCallback<R>): Promise<R> {
@@ -38,7 +40,7 @@ export class BasicUnitOfWork<T extends Message> implements UnitOfWork<T> {
         await this.commit();
 
         this.phase = UnitOfWorkPhase.Completed;
-        this.logger.log('Unit of work completed');
+        this.logger.debug('Unit of work completed');
 
         return result;
       } catch (err) {
@@ -54,6 +56,7 @@ export class BasicUnitOfWork<T extends Message> implements UnitOfWork<T> {
   }
 
   start() {
+    this.logger.debug('Starting unit of work');
     this.phase = UnitOfWorkPhase.Started;
   }
 

@@ -1,58 +1,65 @@
 import * as express from 'express';
-import { CommandMessageFactory, CommandResultListener } from '@telegraph/core';
-import { LogToConsoleCommand } from './app/command/log-to-console.command';
+import * as uuid from 'uuid';
+import {
+  CommandMessageFactory,
+  CommandResultMessage,
+  MessageListenerDefinition,
+  MessageType,
+  TelegraphContext,
+} from '@telegraph/core';
+import { PlaceOrderCommand } from './app/command/place-order.command';
 import { bootstrapTelegraph } from './app/bootstrap-telegraph';
 
-const telegraphContext = bootstrapTelegraph();
+bootstrapTelegraph();
 const app = express();
 app.use(express.json());
 
-app.get('/api/log-to-console', async (req, res, next) => {
-  const message = req.query.message as string;
-  const shouldFail = req.query.shouldFail === 'true';
+app.get('/api/code/place-order', async (req, res, next) => {
+  const total = +req.query.message;
+  const customerName = req.query.customerName?.toString() || '';
 
-  const logToConsoleCommandMessage = CommandMessageFactory.create<LogToConsoleCommand>(
-    'LogToConsoleCommand',
-    { message, shouldFail },
+  const orderId = uuid.v4();
+
+  const command = CommandMessageFactory.create<PlaceOrderCommand>(
+    'PlaceOrderCommand',
+    { orderId, total, customerName },
     {}
   );
 
-  const logToConsoleCommandResultInterceptor = new CommandResultListener({
-    command: logToConsoleCommandMessage,
-    timeout: 1000,
-    onMessage: (commandResult) => {
-      res.json(commandResult);
+  const resultListener: MessageListenerDefinition<CommandResultMessage<any>> = {
+    canHandleMessageType: () => {
+      return MessageType.CommandResult;
     },
-    onTimeout: () => {
-      res.status(500).json({ error: 'Command timed out' });
+    canHandle: (message: CommandResultMessage<CommandResultMessage<any>>) => {
+      return message.commandMessageId === command.messageId;
     },
-    onError: (error) => {
-      res.status(500).json({ error: error?.message });
+    handle: async (result) => {
+      res.json(result);
     },
-  });
+  };
 
-  telegraphContext.messageBus.registerListener(logToConsoleCommandResultInterceptor);
+  TelegraphContext.messageBus.registerListener(resultListener);
 
-  await telegraphContext.commandBus.dispatch(logToConsoleCommandMessage);
+  await TelegraphContext.commandBus.dispatch(command);
 });
 
-app.get('/api/gw/log-to-console', async (req, res, next) => {
-  const message = req.query.message as string;
-  const shouldFail = req.query.shouldFail === 'true';
-
-  try {
-    const result = await telegraphContext.commandGateway.dispatchAndWaitForResult(
-      'LogToConsoleCommand',
-      { message, shouldFail },
-      {},
-      { timeout: 1000 }
-    );
-
-    res.json(result);
-  } catch (error) {
-    res.status(500).json({ error: error?.message });
-  }
-});
+// app.get('/api/gw/log-to-console', async (req, res, next) => {
+//   const message = req.query.message as string;
+//   const shouldFail = req.query.shouldFail === 'true';
+//
+//   try {
+//     const result = await telegraphContext.commandGateway.dispatchAndWaitForResult(
+//       'LogToConsoleCommand',
+//       { message, shouldFail },
+//       {},
+//       { timeout: 1000 }
+//     );
+//
+//     res.json(result);
+//   } catch (error) {
+//     res.status(500).json({ error: error?.message });
+//   }
+// });
 
 app.listen(process.env.PORT || 3000, () => {
   console.log('Listening on port 3000');

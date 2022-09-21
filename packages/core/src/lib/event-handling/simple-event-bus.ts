@@ -53,6 +53,7 @@ export class SimpleEventBus implements EventBus {
     const unitOfWork = CurrentUnitOfWork.get();
 
     if (unitOfWork) {
+      unitOfWork.start();
       this.logger.debug(`Dispatching event [${event.eventName}] in unit of work [${unitOfWork.id}]`);
       return this.dispatchInUnitOfWork(event, unitOfWork);
     } else {
@@ -66,22 +67,24 @@ export class SimpleEventBus implements EventBus {
       throw new Error('Cannot dispatch event in a unit of work that is not started');
     }
 
-    this.eventsQueue[unitOfWork.id] = this.eventsQueue[unitOfWork.id] || [];
-    this.eventsQueue[unitOfWork.id].push(event);
+    const queue = this.getOrCreateEventsQueue(unitOfWork);
+    queue.push(event);
   }
 
   async dispatchImmediately<T>(event: EventMessage<T>): Promise<void> {
     await this.messageBus.publish(event);
   }
 
-  subscribe<T extends EventMessage>(eventName: string, handler: EventHandlerDefinition): Registration {
+  subscribe<T extends EventMessage>(definition: EventHandlerDefinition): Registration {
+    const { eventName } = definition;
+
     this.logger.debug(`Registering event handler for [${eventName}]`);
-    assertNonNull(handler, 'handler cannot be null');
+    assertNonNull(definition, 'handler cannot be null');
 
     this.handlers[eventName] = this.handlers[eventName] || [];
-    this.handlers[eventName].push(handler);
+    this.handlers[eventName].push(definition);
 
-    return () => this.handlers[eventName].splice(this.handlers[eventName].indexOf(handler), 1);
+    return () => this.handlers[eventName].splice(this.handlers[eventName].indexOf(definition), 1);
   }
 
   private getHandlers<T extends EventMessage>(eventName: string): Array<EventHandlerDefinition> {
@@ -101,7 +104,7 @@ export class SimpleEventBus implements EventBus {
     }
   }
 
-  private getEventsQueue(unitOfWork: UnitOfWork<any>): Array<EventMessage> {
+  private getOrCreateEventsQueue(unitOfWork: UnitOfWork<any>): Array<EventMessage> {
     if (this.eventsQueue[unitOfWork.id]) {
       return this.eventsQueue[unitOfWork.id];
     }
@@ -109,13 +112,16 @@ export class SimpleEventBus implements EventBus {
     const queue: Array<EventMessage> = [];
 
     unitOfWork.onCommit(async () => {
-      await Promise.all(queue.map((event) => this.dispatch(event)));
+      this.logger.debug(`Committing events for unit of work [${unitOfWork.id}]. Total: ${queue.length}`);
+      await Promise.all(queue.map((event) => this.dispatchImmediately(event)));
     });
 
     unitOfWork.onCleanup(async () => {
       delete this.eventsQueue[unitOfWork.id];
       return Promise.resolve();
     });
+
+    this.eventsQueue[unitOfWork.id] = queue;
 
     return queue;
   }

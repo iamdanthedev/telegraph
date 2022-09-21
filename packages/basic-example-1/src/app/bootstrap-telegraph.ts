@@ -1,24 +1,29 @@
 import {
+  TelegraphContext,
   BasicUnitOfWorkFactory,
   ConsoleLoggerFactory,
-  CommandGateway,
   LocalMessageBus,
+  SimpleEventBus,
   SimpleCommandBus,
 } from '@telegraph/core';
-import { LogToConsoleCommandHandler } from "./command/log-to-console-command.handler";
+import { placeOrderCommandHandlerDefinition } from './command-handler/place-order.command-handler';
+import { orderPlacedEventHandlerDefinition } from './event-handler/order-placed.event-handler';
 
 export function bootstrapTelegraph() {
   const loggerFactory = new ConsoleLoggerFactory();
   const unitOfWorkFactory = new BasicUnitOfWorkFactory(loggerFactory);
   const messageBus = new LocalMessageBus(loggerFactory, unitOfWorkFactory);
+  const eventBus = new SimpleEventBus(messageBus, loggerFactory, unitOfWorkFactory);
   const commandBus = new SimpleCommandBus(messageBus, loggerFactory, unitOfWorkFactory);
-  const commandGateway = new CommandGateway(messageBus, commandBus, loggerFactory);
 
-  commandBus.subscribe('LogToConsoleCommand', new LogToConsoleCommandHandler());
-
-  return {
+  TelegraphContext.register({
+    loggerFactory,
     messageBus,
+    eventBus,
     commandBus,
-    commandGateway,
-  };
+    unitOfWorkFactory,
+  });
+
+  TelegraphContext.commandBus.subscribe(placeOrderCommandHandlerDefinition);
+  TelegraphContext.eventBus.subscribe(orderPlacedEventHandlerDefinition);
 }
