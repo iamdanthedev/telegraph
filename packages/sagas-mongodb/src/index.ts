@@ -1,1 +1,1 @@
-export * from './lib/sagas-mongodb';
+export * from "./lib/mongo-saga-state-repository";

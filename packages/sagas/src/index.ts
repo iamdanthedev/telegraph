@@ -3,6 +3,9 @@ export * from './lib/association/event-payload-association-resolver';
 
 export * from './lib/saga-definition/saga-definition';
 
+export * from "./lib/repository/saga-state";
+export * from "./lib/repository/saga-state-repository";
+
 // export * from "./lib/interface";
 // export * from "./lib/messaging/saga-event-message";
 // export * from "./lib/messaging/saga-command-message";
