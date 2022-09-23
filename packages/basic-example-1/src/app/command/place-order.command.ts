@@ -3,4 +3,3 @@ export interface PlaceOrderCommand {
   customerName: string;
   total: number;
 }
-

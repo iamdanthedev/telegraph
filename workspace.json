@@ -5,6 +5,7 @@
     "basic-example-1": "packages/basic-example-1",
     "core": "packages/core",
     "nestjs": "packages/nestjs",
-    "sagas": "packages/sagas"
+    "sagas": "packages/sagas",
+    "sagas-mongodb": "packages/sagas-mongodb"
   }
 }

@@ -1,36 +1,67 @@
-import { filter, Observable, Subject } from 'rxjs';
+import { filter, mergeMap, Observable, Subject } from 'rxjs';
 import * as uuid from 'uuid';
 import { LoggerFactory, TelegraphContext } from '@telegraph/core';
-import {
-  SagaDefinition,
-  SagaInstanceDescription,
-  SagaInstanceEvent,
-} from './interface';
+import { AssociationResolver } from './association/association-resolver';
+import { SagaInstanceDescription } from './saga-instance-description';
+import { SagaDefinition, SagaEventHandlerDescriptor } from './saga-definition/saga-definition';
 import { ISagaStore } from './store/saga-store';
-import {
-  isSagaEventMessage,
-  SagaEventMessage,
-} from './messaging/saga-event-message';
 import { SagaInstance } from './runner/saga-instance';
-import { SagaCommandPublisher } from './messaging/saga-command-publisher';
 
-export class SagaOrchestrator {
-  private definitions: Record<string, SagaDefinition<any, any, any>> = {};
+export class SagaManager {
+  private logger = TelegraphContext.loggerFactory.create("SagaManager");
+
+  private definitions: Record<string, SagaDefinition> = {};
   private sagaInstances: Record<string, SagaInstance<any, any, any>> = {};
+  private associationResolverMap: Array<{ resolver: AssociationResolver; sagaDefinition: SagaDefinition }> = [];
 
-  constructor(
-    private readonly context: TelegraphContext,
-    private readonly store: ISagaStore,
-    private readonly loggerFactory: LoggerFactory
-  ) {
+  private knownEventNames: string[] = []; // fixme: find a more efficient implementation
+  private handlersByEventName: Record<string, Array<SagaEventHandlerDescriptor>> = {};
+
+  constructor(private readonly store: ISagaStore, private readonly loggerFactory: LoggerFactory) {
     this.initialize();
   }
 
+  register(definition: SagaDefinition): void {
+    const { sagaId } = definition;
+
+    if (this.definitions[sagaId]) {
+      throw new Error(`Saga with id ${sagaId} already registered`);
+    }
+
+    const resolvers = definition.handlers.map((x) => x.associationResolver);
+
+    this.definitions[sagaId] = definition;
+
+    resolvers.forEach((resolver) => {
+      this.associationResolverMap.push({
+        resolver,
+        sagaDefinition: definition,
+      });
+    });
+
+    definition.handlers.forEach((handler) => {
+      this.knownEventNames.push(handler.eventName);
+
+      this.handlersByEventName[handler.eventName] = this.handlersByEventName[handler.eventName] || [];
+      this.handlersByEventName[handler.eventName].push(handler);
+    });
+  }
+
   initialize() {
-    this.context.messageBus
-      .asObservable()
-      .pipe(filter(isSagaEventMessage))
-      .subscribe((message) => this.execute(message));
+    TelegraphContext.eventBus.asObservable().pipe(
+      filter((x) => this.knownEventNames.includes(x.eventName)),
+      mergeMap((x) => this.handlersByEventName[x.eventName].map((handler) => ({ handler, message: x })))
+    )
+      .subscribe({
+        next: async ({ handler, message }) => {
+          // instantiate handler
+          // run handler
+        },
+        error: (err) => {
+          // fixme: what to do here?
+          this.logger.error(err);
+        }
+      });
   }
 
   async instantiate<Command = any, Phase = any, State = any>(
@@ -57,18 +88,6 @@ export class SagaOrchestrator {
     });
   }
 
-  register<Command, Phase, State>(
-    definition: SagaDefinition<Command, Phase, State>
-  ): void {
-    const { sagaId } = definition;
-
-    if (this.definitions[sagaId]) {
-      throw new Error(`Saga with id ${sagaId} already registered`);
-    }
-
-    this.definitions[sagaId] = definition;
-  }
-
   run<T>(sagaId: string, payload: T): Observable<SagaInstanceEvent<any>> {
     const controller = this.createSagaInstance(sagaId);
     return controller.getSubject().asObservable();
@@ -91,11 +110,7 @@ export class SagaOrchestrator {
 
     const description = new SagaInstanceDescription(sagaId, uuid.v4());
 
-    const commandPublisher = new SagaCommandPublisher(
-      this.context.commandBus,
-      description,
-      this.loggerFactory
-    );
+    const commandPublisher = new SagaCommandPublisher(this.context.commandBus, description, this.loggerFactory);
 
     const initialState = {
       sagaId,
@@ -107,13 +122,7 @@ export class SagaOrchestrator {
 
     await this.store.set(description.sagaInstanceId, initialState);
 
-    return new SagaInstance<Command, Phase, State>(
-      definition,
-      commandPublisher,
-      subject,
-      state,
-      this.loggerFactory
-    );
+    return new SagaInstance<Command, Phase, State>(definition, commandPublisher, subject, state, this.loggerFactory);
   }
 
   private async loadSagaInstance<Command = any, Phase = any, State = any>(
@@ -127,21 +136,11 @@ export class SagaOrchestrator {
 
     const subject = this.createSagaSubject();
 
-    const commandPublisher = new SagaCommandPublisher(
-      this.context.commandBus,
-      description,
-      this.loggerFactory
-    );
+    const commandPublisher = new SagaCommandPublisher(this.context.commandBus, description, this.loggerFactory);
 
     const state = await this.store.get(description.sagaInstanceId);
 
-    return new SagaInstance<Command, Phase, State>(
-      definition,
-      commandPublisher,
-      subject,
-      state,
-      this.loggerFactory
-    );
+    return new SagaInstance<Command, Phase, State>(definition, commandPublisher, subject, state, this.loggerFactory);
   }
 
   private createSagaSubject(): Subject<SagaInstanceEvent<any>> {
@@ -157,11 +156,6 @@ export class SagaOrchestrator {
     }
 
     const sagaState = this.store.get(message.sagaInstanceId);
-    const sagaInstance = new SagaController(
-      definition,
-      subject,
-      sagaState,
-      this.context
-    );
+    const sagaInstance = new SagaController(definition, subject, sagaState, this.context);
   }
 }
