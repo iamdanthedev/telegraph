@@ -5,6 +5,7 @@ import { OrderShippedEvent } from '../events/order-shipped.event';
 import { OrderDeliveredEvent } from '../events/order-delivered.event';
 import { OrderCanceledEvent } from '../events/order-canceled.event';
 import { OrderPaidEvent } from '../events/order-paid.event';
+import { ShipOrderCommand } from '../command/ship-order.command';
 
 export interface OrderSagaState {
   paid: boolean;
@@ -49,9 +50,9 @@ export const orderSagaDefinitions: SagaEventHandlerDefinition[] = [
       state.paid = true;
 
       await TelegraphContext.commandBus.dispatch(
-        CommandMessageFactory.create(
+        CommandMessageFactory.create<ShipOrderCommand>(
           'ShipOrderCommand',
-          { orderId: event.payload.orderId, total: event.payload.total },
+          { orderId: event.payload.orderId, address: 'test address', customerName: event.payload.customerName },
           {}
         )
       );

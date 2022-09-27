@@ -10,11 +10,12 @@ import { SagaManager } from '@telegraph/sagas';
 import { MongoSagaStateRepository } from '@telegraph/sagas-mongodb';
 import { placeOrderCommandHandlerDefinition } from './command-handler/place-order.command-handler';
 import { payOrderCommandHandlerDefinition } from './command-handler/pay-order.command-handler';
+import { shipOrderCommandHandlerDefinition } from './command-handler/ship-order.command-handler';
 import { orderPlacedEventHandlerDefinition } from './event-handler/order-placed.event-handler';
 import { orderSagaDefinitions } from './sagas/order.saga';
 
 export async function bootstrapTelegraph() {
-  const loggerFactory = new ConsoleLoggerFactory();
+  const loggerFactory = new ConsoleLoggerFactory(2);
   const unitOfWorkFactory = new BasicUnitOfWorkFactory(loggerFactory);
   const messageBus = new LocalMessageBus(loggerFactory, unitOfWorkFactory);
   const eventBus = new SimpleEventBus(messageBus, loggerFactory, unitOfWorkFactory);
@@ -40,6 +41,7 @@ export async function bootstrapTelegraph() {
 
   TelegraphContext.commandBus.subscribe(placeOrderCommandHandlerDefinition);
   TelegraphContext.commandBus.subscribe(payOrderCommandHandlerDefinition);
+  TelegraphContext.commandBus.subscribe(shipOrderCommandHandlerDefinition);
   TelegraphContext.eventBus.subscribe(orderPlacedEventHandlerDefinition);
 
   orderSagaDefinitions.forEach((definition) => sagaManager.register(definition));

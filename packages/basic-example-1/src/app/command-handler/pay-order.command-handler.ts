@@ -2,9 +2,6 @@ import * as uuid from 'uuid';
 import { CommandHandlerDefinition, EventMessageFactory, TelegraphContext } from '@telegraph/core';
 import { PayOrderCommand } from '../command/pay-order.command';
 import { OrderPaidEvent } from '../events/order-paid.event';
-import { PlaceOrderCommand } from '../command/place-order.command';
-import { OrderPlacedEvent } from '../events/order-placed.event';
-import { OrderCanceledEvent } from '../events/order-canceled.event';
 
 export const payOrderCommandHandlerDefinition: CommandHandlerDefinition<PayOrderCommand> = {
   commandName: 'PayOrderCommand',
