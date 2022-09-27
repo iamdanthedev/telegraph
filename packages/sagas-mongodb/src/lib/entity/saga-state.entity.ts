@@ -6,6 +6,7 @@ export interface SagaStateEntity {
   sagaId: string;
   state: SagaStateValue;
   associationValues: AssociationValue[];
+  completed: boolean;
   revision: number;
   createdAt: Date;
   updatedAt: Date;

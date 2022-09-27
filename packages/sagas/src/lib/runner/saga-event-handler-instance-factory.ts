@@ -7,7 +7,7 @@ import { AssociationValue } from '../association/association-value';
 export class SagaEventHandlerInstanceFactory {
   getInstance(
     definition: SagaEventHandlerDefinition,
-    associationValue: AssociationValue,
+    associationValue: AssociationValue | undefined,
     event: EventMessage,
     state: SagaState
   ): SagaEventHandlerInstance {

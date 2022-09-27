@@ -44,6 +44,7 @@ export class MongoSagaStateRepository implements SagaStateRepository {
       state: item.state,
       revision: item.revision,
       associationValues: item.associationValues,
+      completed: item.completed,
     };
   }
 
@@ -63,8 +64,9 @@ export class MongoSagaStateRepository implements SagaStateRepository {
         $setOnInsert: {
           sagaId: state.sagaId,
           associationValues: state.associationValues,
-          revision: 0,
+          // revision: 0,
           createdAt: new Date(),
+          completed: false,
         },
       },
       {

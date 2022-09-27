@@ -6,7 +6,7 @@ import { SagaState } from "../repository/saga-state";
 export class SagaEventHandlerInstance {
   constructor(
     private readonly definition: SagaEventHandlerDefinition,
-    private readonly association: AssociationValue,
+    private readonly association: AssociationValue | undefined,
     private readonly eventMessage: EventMessage,
     private readonly state: SagaState,
     private readonly logger: Logger

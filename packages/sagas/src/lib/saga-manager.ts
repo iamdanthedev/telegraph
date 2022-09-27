@@ -28,10 +28,10 @@ export class SagaManager {
       .pipe(
         filter((x) => this.knownEventNames.includes(x.eventName)),
         mergeMap((x) => this.definitionsByEvent[x.eventName].map((definition) => ({ message: x, definition }))),
-        filter((x) => x.definition.associationResolver.validate(x.message)),
+        filter((x) => x.definition.sagaStart || !!x.definition.associationResolver?.validate(x.message)),
         map((x) => ({
           ...x,
-          association: x.definition.associationResolver.resolve(x.message),
+          association: x.definition.associationResolver?.resolve(x.message),
         }))
         // distinct((x) => x.message.eventName + x.definition.sagaId)
       )
@@ -52,7 +52,7 @@ export class SagaManager {
     this.knownEventNames.push(definition.eventName);
   }
 
-  async handle(definition: SagaEventHandlerDefinition, event: EventMessage, associationValue: AssociationValue) {
+  async handle(definition: SagaEventHandlerDefinition, event: EventMessage, associationValue?: AssociationValue) {
     const unitOfWork = this.unitOfWorkFactory.create(event);
     const state = await this.getSagaState(definition, associationValue);
 
@@ -76,8 +76,12 @@ export class SagaManager {
 
   private async getSagaState(
     definition: SagaEventHandlerDefinition,
-    associationValue: AssociationValue
+    associationValue?: AssociationValue
   ): Promise<SagaState> {
+    if (!definition.sagaStart && !associationValue) {
+      throw new Error('Association value is required for non-saga-start events');
+    }
+
     if (definition.sagaStart) {
       if (!definition.initialState) {
         throw new Error('initialState must be defined for sagaStart');
@@ -86,15 +90,16 @@ export class SagaManager {
       const envelope: SagaState = {
         sagaId: definition.sagaId,
         sagaInstanceId: uuid.v4(),
-        revision: 0, // fixme ?
-        associationValues: [associationValue],
+        revision: 0,
+        associationValues: associationValue ? [associationValue] : [],
         state: definition.initialState,
+        completed: false,
       };
 
       return Promise.resolve(envelope);
     }
 
-    const state = await this.stateRepository.find(definition.sagaId, associationValue);
+    const state = await this.stateRepository.find(definition.sagaId, associationValue!);
 
     if (!state) {
       throw new Error(

@@ -1,4 +1,4 @@
-import { CommandMessageFactory, EventMessage, EventMessageFactory, TelegraphContext } from '@telegraph/core';
+import { CommandMessageFactory, EventMessageFactory, TelegraphContext } from '@telegraph/core';
 import { EventPayloadAssociationResolver, SagaEventHandlerDefinition } from '@telegraph/sagas';
 import { OrderPlacedEvent } from '../events/order-placed.event';
 import { OrderShippedEvent } from '../events/order-shipped.event';
@@ -19,6 +19,13 @@ export const orderSagaDefinitions: SagaEventHandlerDefinition[] = [
     eventName: 'OrderPlacedEvent',
     sagaStart: true,
     sagaEnd: false,
+    initialState: {
+      paid: false,
+      shipped: false,
+      delivered: false,
+      canceled: false,
+    } as OrderSagaState,
+    associationResolver: new EventPayloadAssociationResolver('orderId'),
     callback: async ({ event, state }) => {
       const { orderId, total, customerName } = event.payload;
 
