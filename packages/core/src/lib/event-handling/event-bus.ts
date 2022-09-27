@@ -6,5 +6,5 @@ import { Registration } from '../common/registration';
 export interface EventBus {
   dispatch<T>(event: EventMessage<T>): Promise<void>;
   subscribe<T extends EventMessage>(handlerDefinition: EventHandlerDefinition): Registration;
-  asObservable<T extends EventMessage>(): Observable<T>;
+  asObservable(): Observable<EventMessage>;
 }

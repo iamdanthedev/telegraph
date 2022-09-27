@@ -10,19 +10,19 @@ import { SagaStateRepository } from './repository/saga-state-repository';
 export class SagaManager {
   private logger = TelegraphContext.loggerFactory.create('SagaManager');
 
+  private readonly instanceFactory = new SagaEventHandlerInstanceFactory();
   private definitionsByEvent: Record<string, SagaEventHandlerDefinition[]> = {};
   private knownEventNames: string[] = []; // fixme: find a more efficient implementation
 
   constructor(
     private readonly loggerFactory: LoggerFactory,
-    private readonly sagaInstanceFactory: SagaEventHandlerInstanceFactory,
     private readonly unitOfWorkFactory: UnitOfWorkFactory,
     private readonly stateRepository: SagaStateRepository
-  ) {
-    this.initialize();
-  }
+  ) {}
 
-  initialize() {
+  async initialize() {
+    await this.stateRepository.init();
+
     TelegraphContext.eventBus
       .asObservable()
       .pipe(
@@ -56,12 +56,17 @@ export class SagaManager {
     const unitOfWork = this.unitOfWorkFactory.create(event);
     const state = await this.getSagaState(definition, associationValue);
 
-    const handler = await this.sagaInstanceFactory.getInstance(definition, associationValue, event, state);
+    const handler = await this.instanceFactory.getInstance(definition, associationValue, event, state);
 
     try {
       unitOfWork.start();
       await unitOfWork.execute(async () => {
         const updatedState = await handler.handle(event);
+
+        if (definition.sagaEnd) {
+          updatedState.completed = true;
+        }
+
         await this.stateRepository.save(updatedState);
       });
     } catch (err) {
@@ -82,6 +87,7 @@ export class SagaManager {
         sagaId: definition.sagaId,
         sagaInstanceId: uuid.v4(),
         revision: 0, // fixme ?
+        associationValues: [associationValue],
         state: definition.initialState,
       };
 

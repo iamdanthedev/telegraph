@@ -13,6 +13,6 @@ export interface SagaEventHandlerDefinition<State extends SagaStateValue = SagaS
   sagaStart: boolean;
   sagaEnd: boolean;
   initialState?: State; // only if sagaStart is true
-  associationResolver: AssociationResolver;
+  associationResolver?: AssociationResolver;
   callback(params: SagaEventHandlerCallbackParams<State>): Promise<void>;
 }

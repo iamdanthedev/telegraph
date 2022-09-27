@@ -1,4 +1,4 @@
-import { filter, mergeMap, Subscription } from 'rxjs';
+import { filter, mergeMap, Observable, Subscription } from 'rxjs';
 import { EventBus } from './event-bus';
 import { EventMessage, isEventMessage } from './event-message';
 import { EventHandlerDefinition } from './event-handler-definition';
@@ -43,6 +43,10 @@ export class SimpleEventBus implements EventBus {
           this.logger.debug('Event bus completed');
         },
       });
+  }
+
+  asObservable(): Observable<EventMessage> {
+    return this.messageBus.asObservable().pipe(filter(isEventMessage));
   }
 
   async dispatch<T>(event: EventMessage<T>): Promise<void> {

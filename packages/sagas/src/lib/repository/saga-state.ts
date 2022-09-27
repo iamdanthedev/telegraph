@@ -8,4 +8,5 @@ export interface SagaState<T extends SagaStateValue = SagaStateValue> {
   revision: number;
   state: T;
   associationValues: AssociationValue[];
+  completed: boolean;
 }
