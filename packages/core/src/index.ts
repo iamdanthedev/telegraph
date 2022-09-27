@@ -29,5 +29,6 @@ export * from './lib/messaging/message-listener-definition';
 export * from './lib/messaging/result-message';
 
 export * from './lib/unit-of-work/unit-of-work';
+export * from './lib/unit-of-work/unit-of-work-factory';
 export * from './lib/unit-of-work/basic-unit-of-work';
 export * from './lib/unit-of-work/basic-unit-of-work-factory';
