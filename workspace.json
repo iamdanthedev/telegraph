@@ -4,6 +4,7 @@
   "projects": {
     "basic-example-1": "packages/basic-example-1",
     "core": "packages/core",
+    "examples-nestjs-example": "packages/examples/nestjs-example",
     "nestjs": "packages/nestjs",
     "sagas": "packages/sagas",
     "sagas-mongodb": "packages/sagas-mongodb"
