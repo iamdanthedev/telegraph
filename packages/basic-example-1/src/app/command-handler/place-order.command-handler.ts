@@ -19,7 +19,7 @@ export const placeOrderCommandHandlerDefinition: CommandHandlerDefinition<PlaceO
 
     console.log('Placing order for: ' + command.payload.customerName);
 
-    if (command.payload.total > 100) {
+    if (command.payload.total < 100) {
       // too expensive
       await TelegraphContext.eventBus.dispatch(
         EventMessageFactory.create<OrderCanceledEvent>('OrderCanceledEvent', {
