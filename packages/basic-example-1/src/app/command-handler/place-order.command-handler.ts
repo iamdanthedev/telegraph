@@ -19,7 +19,7 @@ export const placeOrderCommandHandlerDefinition: CommandHandlerDefinition<PlaceO
 
     console.log('Placing order for: ' + command.payload.customerName);
 
-    if (command.payload.total < 100) {
+    if (command.payload.total > 100) {
       // too expensive
       await TelegraphContext.eventBus.dispatch(
         EventMessageFactory.create<OrderCanceledEvent>('OrderCanceledEvent', {
@@ -28,7 +28,7 @@ export const placeOrderCommandHandlerDefinition: CommandHandlerDefinition<PlaceO
         })
       );
 
-      return 'Order placed';
+      return 'Order canceled (too expensive)';
     } else {
       await TelegraphContext.eventBus.dispatch(
         EventMessageFactory.create<OrderPlacedEvent>('OrderPlacedEvent', {
@@ -38,7 +38,7 @@ export const placeOrderCommandHandlerDefinition: CommandHandlerDefinition<PlaceO
         })
       );
 
-      return 'Order too expensive';
+      return 'Order placed';
     }
   },
 };

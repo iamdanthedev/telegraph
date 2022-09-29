@@ -5,6 +5,4 @@ export const EVENT_HANDLER_METADATA = 'EVENT_HANDLER_METADATA';
 export const SAGA_METADATA = 'SAGA_METADATA';
 export const SAGA_START_METADATA = 'SAGA_START_METADATA';
 export const SAGA_END_METADATA = 'SAGA_END_METADATA';
-
-export const telegraphCommandHandlerDescriptor = Symbol('TelegraphCommandHandler');
-export const telegraphEventHandlerDescriptor = Symbol('TelegraphEventHandler');
+export const SAGA_EVENT_HANDLER = 'SAGA_END_METADATA';

@@ -9,64 +9,59 @@ import {
 } from '@telegraph/core';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
 import {
-  getCommandHandlerDescriptor,
-  getEventHandlerDescriptor,
+  CommandHandlerMetadata,
+  EventHandlerMetadata,
   ICommandHandler,
   IEventHandler,
   isTelegraphCommandHandler,
+  SagaMetadata,
 } from '@telegraph/nestjs';
-import {
-  COMMAND_HANDLER_METADATA,
-  EVENT_HANDLER_METADATA,
-  telegraphCommandHandlerDescriptor,
-  telegraphEventHandlerDescriptor,
-} from '../decorators/constants';
+import { COMMAND_HANDLER_METADATA, EVENT_HANDLER_METADATA, SAGA_METADATA } from '../decorators/constants';
 
 @Injectable()
 export class ExplorerService {
-  private commandHandlers: InstanceWrapper[] = [];
-  private eventHandlers: InstanceWrapper[] = [];
+  private commandHandlers: Array<{ metadata: CommandHandlerMetadata; instanceWrapper: InstanceWrapper }> = [];
+  private eventHandlers: Array<{ metadata: EventHandlerMetadata; instanceWrapper: InstanceWrapper }> = [];
+  private sagas: Array<{ metadata: SagaMetadata; instanceWrapper: InstanceWrapper }> = [];
 
   constructor(private readonly discovery: DiscoveryService, private readonly moduleRef: ModuleRef) {
     this.scan();
   }
 
   registerEventHandlers() {
-    this.eventHandlers.forEach((eventHandler) => {
-      const descriptor = getEventHandlerDescriptor(eventHandler.token as Function);
-      const instance: IEventHandler<any> = this.moduleRef.get(eventHandler.token, { strict: false });
+    this.eventHandlers.forEach(({ metadata, instanceWrapper }) => {
+      const instance: IEventHandler<any> = this.moduleRef.get(instanceWrapper.token, { strict: false });
 
       if (!instance) {
-        // fixme: log error?
-        return;
+        return; // fixme: should log error?
       }
 
       const definition: EventHandlerDefinition = {
-        eventName: descriptor.eventName,
+        eventName: metadata.eventName,
         canHandleCallback: (message: EventMessage) => {
-          return message.eventName === descriptor.eventName;
+          return message.eventName === metadata.eventName;
         },
         handleCallback: async (message: EventMessage) => {
           await instance.handle(message.payload, message);
         },
       };
+
+      TelegraphContext.eventBus.subscribe(definition);
     });
   }
 
   registerCommandHandlers() {
-    this.commandHandlers.forEach((commandHandler) => {
-      const descriptor = getCommandHandlerDescriptor(commandHandler.token as Function);
-      const instance: ICommandHandler<any> = this.moduleRef.get(commandHandler.token, { strict: false });
+    this.commandHandlers.forEach(({ metadata, instanceWrapper}) => {
+      const instance: ICommandHandler<any> = this.moduleRef.get(instanceWrapper.token, { strict: false });
 
       if (!instance) {
-        // fixme: log error?
-        return;
+        return; // fixme: log error?
       }
 
       const definition: CommandHandlerDefinition = {
-        commandName: descriptor.commandName,
+        commandName: metadata.commandName,
         canHandleCallback: (message: CommandMessage) => {
-          return message.commandName === descriptor.commandName;
+          return message.commandName === metadata.commandName;
         },
         handleCallback: async (message: CommandMessage) => {
           await instance.handle(message.payload, message);
@@ -77,36 +72,46 @@ export class ExplorerService {
     });
   }
 
+  registerSagas() {
+    this.sagas.forEach(({metadata, instanceWrapper}) => {
+
+    })
+  }
+
   private scan() {
     const providers = this.discovery.getProviders();
 
     providers
       .filter((x) => isTelegraphCommandHandler(x.token))
       .forEach((provider) => {
-        const eventHandlerMeta = Reflect.getMetadata(EVENT_HANDLER_METADATA, provider.token);
-        const commandHandlerMeta = Reflect.getMetadata(COMMAND_HANDLER_METADATA, provider.token);
+        const eventHandlerMeta: EventHandlerMetadata = Reflect.getMetadata(EVENT_HANDLER_METADATA, provider.token);
+        const commandHandlerMeta: CommandHandlerMetadata = Reflect.getMetadata(
+          COMMAND_HANDLER_METADATA,
+          provider.token
+        );
+        const sagaMeta: SagaMetadata = Reflect.getMetadata(SAGA_METADATA, provider.token);
 
         if (eventHandlerMeta) {
-          const existing = this.eventHandlers.find(
-            (x) =>
-              (x.token as any)[telegraphEventHandlerDescriptor].id ===
-              (provider.token as any)[telegraphEventHandlerDescriptor].id
-          );
+          const existing = this.eventHandlers.find((x) => x.metadata.id === eventHandlerMeta.id);
 
           if (!existing) {
-            this.eventHandlers.push(provider);
+            this.eventHandlers.push({ metadata: eventHandlerMeta, instanceWrapper: provider });
           }
         }
 
         if (commandHandlerMeta) {
-          const existing = this.commandHandlers.find(
-            (x) =>
-              (x.token as any)[telegraphCommandHandlerDescriptor].id ===
-              (provider.token as any)[telegraphCommandHandlerDescriptor].id
-          );
+          const existing = this.commandHandlers.find((x) => x.metadata.id === commandHandlerMeta.id);
 
           if (!existing) {
-            this.commandHandlers.push(provider);
+            this.commandHandlers.push({ metadata: commandHandlerMeta, instanceWrapper: provider });
+          }
+        }
+
+        if (sagaMeta) {
+          const existing = this.sagas.find((x) => x.metadata.id === sagaMeta.id);
+
+          if (!existing) {
+            this.sagas.push({ metadata: sagaMeta, instanceWrapper: provider });
           }
         }
       });

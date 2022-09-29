@@ -1,3 +1,3 @@
 export class OrderPlacedEvent {
-  constructor(orderId: string, customerName: string, total: number) {}
+  constructor(public readonly orderId: string, public readonly customerName: string, public readonly total: number) {}
 }

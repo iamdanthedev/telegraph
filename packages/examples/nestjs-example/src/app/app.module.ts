@@ -1,13 +1,12 @@
 import { Module } from '@nestjs/common';
 import { TelegraphModule } from '@telegraph/nestjs';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { PayOrderModule } from '../pay-order-module/pay-order.module';
-import { PayOrderCommandHandler } from '../pay-order-module/command-handler/pay-order.command-handler';
+import { OrderModule } from '../modules/orders/order.module';
+import { PaymentModule } from '../modules/payment/payment.module';
+import { ShippingModule } from '../modules/shipping/shipping.module';
 
 @Module({
-  imports: [TelegraphModule, PayOrderModule],
-  controllers: [AppController],
-  providers: [AppService, PayOrderCommandHandler],
+  imports: [TelegraphModule, OrderModule, PaymentModule, ShippingModule],
+  controllers: [],
+  providers: [],
 })
 export class AppModule {}
