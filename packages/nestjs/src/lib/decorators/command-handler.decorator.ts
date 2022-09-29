@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import * as uuid from 'uuid';
 import type { Class } from 'type-fest';
-import { COMMAND_METADATA, COMMAND_HANDLER_METADATA, commandHandlerDescriptorKey } from './constants';
+import { COMMAND_METADATA, COMMAND_HANDLER_METADATA, telegraphCommandHandlerDescriptor } from './constants';
 
 export interface CommandHandlerDescriptor {
   id: string;
@@ -19,7 +19,7 @@ export function CommandHandler(command: Class<any>): ClassDecorator {
       commandName: command.name,
     };
 
-    Object.defineProperty(target, commandHandlerDescriptorKey, {
+    Object.defineProperty(target, telegraphCommandHandlerDescriptor, {
       value: descriptor,
     });
 
@@ -32,5 +32,5 @@ export function isTelegraphCommandHandler(target: any): target is Function {
 }
 
 export function getCommandHandlerDescriptor(target: Function) {
-  return (target as any)[commandHandlerDescriptorKey] as CommandHandlerDescriptor;
+  return (target as any)[telegraphCommandHandlerDescriptor] as CommandHandlerDescriptor;
 }

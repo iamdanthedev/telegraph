@@ -1,12 +1,12 @@
 import * as uuid from 'uuid';
-import { CommandHandler, ICommandHandler, EventBus } from '@telegraph/nestjs';
+import { CommandHandler, ICommandHandler, EventPublisher } from '@telegraph/nestjs';
 import { CommandMessage } from '@telegraph/core';
 import { PayOrderCommand } from '../command/pay-order.command';
 import { OrderPaidEvent } from '../event/order-paid.event';
 
 @CommandHandler(PayOrderCommand)
 export class PayOrderCommandHandler implements ICommandHandler<PayOrderCommand> {
-  constructor(private readonly eventBus: EventBus) {}
+  constructor(private readonly eventPublisher: EventPublisher) {}
 
   async handle(command: PayOrderCommand, message: CommandMessage<PayOrderCommand>): Promise<void> {
     console.log('handling payment');
@@ -17,6 +17,6 @@ export class PayOrderCommandHandler implements ICommandHandler<PayOrderCommand> 
 
     const event = new OrderPaidEvent(command.orderId, invoiceId, command.total);
 
-    await this.eventBus.dispatch(event);
+    await this.eventPublisher.publish(event);
   }
 }

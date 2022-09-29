@@ -4,8 +4,8 @@ import { EventMessage, MessageType, TelegraphContext } from '@telegraph/core';
 import { EVENT_METADATA } from '../decorators/constants';
 
 @Injectable()
-export class EventBus {
-  async dispatch<T extends {}>(event: T): Promise<EventMessage<T>> {
+export class EventPublisher {
+  async publish<T extends {}>(event: T): Promise<EventMessage<T>> {
     const metadata = Reflect.getMetadata(EVENT_METADATA, event);
 
     if (!metadata) {

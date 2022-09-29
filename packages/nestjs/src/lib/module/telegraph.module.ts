@@ -1,11 +1,12 @@
 import { Module, OnApplicationBootstrap } from '@nestjs/common';
 import { DiscoveryService } from '@nestjs/core';
-import { EventBus } from '../providers/event-bus';
+import { EventPublisher } from '../providers/event-publisher';
+import { CommandPublisher } from '../providers/command-publisher';
 import { ExplorerService } from '../service/explorer.service';
 
 @Module({
-  providers: [EventBus, DiscoveryService, ExplorerService],
-  exports: [EventBus],
+  providers: [DiscoveryService, ExplorerService, EventPublisher, CommandPublisher],
+  exports: [EventPublisher, CommandPublisher],
 })
 export class TelegraphModule implements OnApplicationBootstrap {
   constructor(private readonly explorerService: ExplorerService) {
