@@ -81,6 +81,7 @@ export class OrderPlacedSaga implements ISaga<OrderPlacedSagaState> {
   @SagaEventHandler(OrderCanceledEvent, { associationField: 'orderId' })
   @SagaEnd()
   async orderCanceled(event: OrderCanceledEvent) {
+    this.state.canceled = true;
     console.log('order canceled');
   }
 }
