@@ -26,7 +26,9 @@ export class SagaManager {
     TelegraphContext.eventBus
       .asObservable()
       .pipe(
-        filter((x) => this.knownEventNames.includes(x.eventName)),
+        filter((x) => {
+          return this.knownEventNames.includes(x.eventName);
+        }),
         mergeMap((x) => this.definitionsByEvent[x.eventName].map((definition) => ({ message: x, definition }))),
         filter((x) => x.definition.sagaStart || !!x.definition.associationResolver?.validate(x.message)),
         map((x) => ({
@@ -55,8 +57,7 @@ export class SagaManager {
   async handle(definition: SagaEventHandlerDefinition, event: EventMessage, associationValue?: AssociationValue) {
     const unitOfWork = this.unitOfWorkFactory.create(event);
     const state = await this.getSagaState(definition, associationValue);
-
-    const handler = await this.instanceFactory.getInstance(definition, associationValue, event, state);
+    const handler = this.instanceFactory.getInstance(definition, associationValue, event, state);
 
     try {
       unitOfWork.start();

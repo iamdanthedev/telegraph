@@ -34,7 +34,9 @@ export class SimpleEventBus implements EventBus {
         })
       )
       .subscribe({
-        next: (handler) => handler(),
+        next: async (handler) => {
+          await handler();
+        },
         error: (err) => {
           console.log('event bus error', err);
           this.logger.error(err);
@@ -46,7 +48,13 @@ export class SimpleEventBus implements EventBus {
   }
 
   asObservable(): Observable<EventMessage> {
-    return this.messageBus.asObservable().pipe(filter(isEventMessage));
+    return this.messageBus.asObservable().pipe(
+      filter(isEventMessage),
+      filter((x, index) => {
+        console.log('filter', x, index);
+        return true;
+      })
+    );
   }
 
   async dispatch<T>(event: EventMessage<T>): Promise<void> {

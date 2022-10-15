@@ -46,17 +46,18 @@ export class OrderPlacedSaga implements ISaga<OrderPlacedSagaState> {
   @SagaEventHandler(OrderPaidEvent, { associationField: 'orderId' })
   async orderPaid(event: OrderPaidEvent) {
     this.state.paid = true;
-
     await this.commandPublisher.publish(new ShipOrderCommand(event.orderId, event.customerName, 'test address'));
   }
 
   @SagaEventHandler(OrderPaymentFailedEvent, { associationField: 'orderId' })
   async orderPaymentFailed(event: OrderPaymentFailedEvent) {
+    this.state.paid = false;
     await this.commandPublisher.publish(new CancelOrderCommand(event.orderId, 'insufficient funds'));
   }
 
   @SagaEventHandler(OrderShippedEvent, { associationField: 'orderId' })
   async orderShipped(event: OrderShippedEvent) {
+    this.state.shipped = true;
     console.log('order shipped. waiting for webhook...');
   }
 
@@ -73,6 +74,7 @@ export class OrderPlacedSaga implements ISaga<OrderPlacedSagaState> {
   @SagaEventHandler(OrderDeliveredEvent, { associationField: 'orderId' })
   @SagaEnd()
   async orderDelivered(event: OrderDeliveredEvent) {
+    this.state.delivered = true;
     console.log('order delivered');
   }
 

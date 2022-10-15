@@ -1,5 +1,5 @@
 import { filter, from, mergeMap } from 'rxjs';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Optional } from '@nestjs/common';
 import { DiscoveryService, ModuleRef } from '@nestjs/core';
 import {
   CommandHandlerDefinition,
@@ -41,7 +41,7 @@ export class ExplorerService {
   constructor(
     private readonly discovery: DiscoveryService,
     private readonly moduleRef: ModuleRef,
-    private readonly sagaManager: SagaManager
+    @Optional() private readonly sagaManager: SagaManager
   ) {
     this.scan();
   }
@@ -94,7 +94,6 @@ export class ExplorerService {
     this.sagas.forEach(({ metadata, instanceWrapper }) => {
       console.log('registering saga', metadata.id);
 
-
       // fixme: assert saga has start and end
 
       metadata.eventHandlers.forEach(({ propertyName }) => {
@@ -134,6 +133,10 @@ export class ExplorerService {
           initialState: sagaStartMetadata?.initialState, // only if sagaStart is true
           associationResolver: new EventPayloadAssociationResolver(sagaEventHandlerMetadata.associationField),
           callback: async (params) => {
+            const instance: any = this.moduleRef.get(instanceWrapper.token, { strict: false });
+            instance.state = params.state;
+            instance[propertyName](params.event.payload, params.event);
+
             console.log('saga event handler callback', params);
           },
         };

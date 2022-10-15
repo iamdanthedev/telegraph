@@ -32,7 +32,9 @@ export class SimpleCommandBus implements CommandBus {
         })
       )
       .subscribe({
-        next: (handler) => handler(),
+        next: async (handler) => {
+          await handler();
+        },
         error: (err) => {
           console.log('command bus error', err);
           this.logger.error(err);
@@ -78,8 +80,8 @@ export class SimpleCommandBus implements CommandBus {
       const commandResultMessage = asCommandResultMessage(command.messageId, result);
       this.logger.debug(`Publishing CommandResult for [${command.commandName}]`);
       await this.messageBus.publish(commandResultMessage);
-    } catch (err) {
-      this.logger.debug(`Execution failed for [${command.commandName}]`);
+    } catch (err: any) {
+      this.logger.debug(`Execution failed for [${command.commandName}]: ${err.toString()}`);
       const error = err instanceof Error ? err : new Error((err as any)?.toString());
       const commandResultMessage = asCommandResultMessage(command.messageId, error);
       await this.messageBus.publish(commandResultMessage);

@@ -23,12 +23,13 @@ export class TelegraphModuleOptions {
   };
 }
 
-@Global()
 @Module({
   providers: [DiscoveryService, ExplorerService, EventPublisher, CommandPublisher],
   exports: [EventPublisher, CommandPublisher],
 })
 export class TelegraphModule implements OnModuleInit {
+  static initialized = false;
+
   static register(options: TelegraphModuleOptions): DynamicModule {
     const loggerFactory = options.loggerFactory || new ConsoleLoggerFactory(0); // fixme: integrate with nestjs logger
 
@@ -75,6 +76,7 @@ export class TelegraphModule implements OnModuleInit {
     }
 
     return {
+      global: true,
       module: TelegraphModule,
       providers,
       exports,
@@ -90,6 +92,12 @@ export class TelegraphModule implements OnModuleInit {
   }
 
   async onModuleInit() {
+    if (TelegraphModule.initialized) {
+      return;
+    }
+
+    TelegraphModule.initialized = true;
+
     this.explorerService.registerCommandHandlers();
     this.explorerService.registerEventHandlers();
 

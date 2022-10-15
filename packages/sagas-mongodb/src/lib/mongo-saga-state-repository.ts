@@ -56,6 +56,7 @@ export class MongoSagaStateRepository implements SagaStateRepository {
       {
         $set: {
           state: state.state,
+          completed: state.completed,
           updatedAt: new Date(),
         },
         $inc: {
@@ -66,7 +67,6 @@ export class MongoSagaStateRepository implements SagaStateRepository {
           associationValues: state.associationValues,
           // revision: 0,
           createdAt: new Date(),
-          completed: false,
         },
       },
       {
