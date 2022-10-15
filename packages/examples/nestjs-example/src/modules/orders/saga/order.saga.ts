@@ -13,6 +13,7 @@ import { OrderRefundedEvent } from '../../payment/event/order-refunded.event';
 import { RefundCreditCardCommand } from '../../payment/command/refund-credit-card.command';
 
 export interface OrderPlacedSagaState {
+  productId: string;
   paid: boolean;
   shipped: boolean;
   delivered: boolean;
@@ -28,6 +29,7 @@ export class OrderPlacedSaga implements ISaga<OrderPlacedSagaState> {
 
   @SagaStart<OrderPlacedSagaState>({
     initialState: {
+      productId: '',
       paid: false,
       shipped: false,
       delivered: false,
@@ -35,46 +37,46 @@ export class OrderPlacedSaga implements ISaga<OrderPlacedSagaState> {
       amount: -1,
     },
   })
-  @SagaEventHandler(OrderPlacedEvent)
+  @SagaEventHandler(OrderPlacedEvent, { associationField: 'orderId' })
   async orderPlaced(event: OrderPlacedEvent) {
     this.state.amount = event.total;
     await this.commandPublisher.publish(new ChargeCreditCardCommand(event.orderId, event.total));
   }
 
-  @SagaEventHandler(OrderPaidEvent)
+  @SagaEventHandler(OrderPaidEvent, { associationField: 'orderId' })
   async orderPaid(event: OrderPaidEvent) {
     this.state.paid = true;
 
     await this.commandPublisher.publish(new ShipOrderCommand(event.orderId, event.customerName, 'test address'));
   }
 
-  @SagaEventHandler(OrderPaymentFailedEvent)
+  @SagaEventHandler(OrderPaymentFailedEvent, { associationField: 'orderId' })
   async orderPaymentFailed(event: OrderPaymentFailedEvent) {
     await this.commandPublisher.publish(new CancelOrderCommand(event.orderId, 'insufficient funds'));
   }
 
-  @SagaEventHandler(OrderShippedEvent)
+  @SagaEventHandler(OrderShippedEvent, { associationField: 'orderId' })
   async orderShipped(event: OrderShippedEvent) {
     console.log('order shipped. waiting for webhook...');
   }
 
-  @SagaEventHandler(OrderReturnedEvent)
+  @SagaEventHandler(OrderReturnedEvent, { associationField: 'orderId' })
   async orderReturned(event: OrderReturnedEvent) {
     await this.commandPublisher.publish(new RefundCreditCardCommand(event.orderId, this.state.amount));
   }
 
-  @SagaEventHandler(OrderRefundedEvent)
+  @SagaEventHandler(OrderRefundedEvent, { associationField: 'orderId' })
   async orderRefunded(event: OrderRefundedEvent) {
     await this.commandPublisher.publish(new CancelOrderCommand(event.orderId, 'order returned'));
   }
 
-  @SagaEventHandler(OrderDeliveredEvent)
+  @SagaEventHandler(OrderDeliveredEvent, { associationField: 'orderId' })
   @SagaEnd()
   async orderDelivered(event: OrderDeliveredEvent) {
     console.log('order delivered');
   }
 
-  @SagaEventHandler(OrderCanceledEvent)
+  @SagaEventHandler(OrderCanceledEvent, { associationField: 'orderId' })
   @SagaEnd()
   async orderCanceled(event: OrderCanceledEvent) {
     console.log('order canceled');

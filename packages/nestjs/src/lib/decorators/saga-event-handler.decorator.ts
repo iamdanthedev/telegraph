@@ -8,9 +8,14 @@ export interface SagaEventHandlerMetadata {
   id: string;
   sagaId: string;
   eventName: string;
+  associationField: string;
 }
 
-export function SagaEventHandler(event: Class<any>) {
+export interface SagaEventHandlerOptions {
+  associationField: string;
+}
+
+export function SagaEventHandler(event: Class<any>, options: SagaEventHandlerOptions) {
   return function (target: Object, key: string | symbol, descriptor: PropertyDescriptor) {
     if (!Reflect.hasMetadata(EVENT_METADATA, event)) {
       const eventMetadata: EventMetadata = {
@@ -26,6 +31,7 @@ export function SagaEventHandler(event: Class<any>) {
         id: uuid.v4(),
         sagaId: target.constructor.name,
         eventName: event.name,
+        associationField: options.associationField,
       };
 
       Reflect.defineMetadata(SAGA_EVENT_HANDLER, metadata, target, key);

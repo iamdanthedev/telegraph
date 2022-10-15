@@ -5,7 +5,16 @@ import { PaymentModule } from '../modules/payment/payment.module';
 import { ShippingModule } from '../modules/shipping/shipping.module';
 
 @Module({
-  imports: [TelegraphModule, OrderModule, PaymentModule, ShippingModule],
+  imports: [
+    TelegraphModule.register({
+      sagasOptions: {
+        mongoUri: 'mongodb://localhost:27017/telegraph-dev',
+      },
+    }),
+    OrderModule,
+    PaymentModule,
+    ShippingModule,
+  ],
   controllers: [],
   providers: [],
 })

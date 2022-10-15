@@ -1,3 +1,4 @@
+import { filter, from, mergeMap } from 'rxjs';
 import { Injectable } from '@nestjs/common';
 import { DiscoveryService, ModuleRef } from '@nestjs/core';
 import {
@@ -13,10 +14,23 @@ import {
   EventHandlerMetadata,
   ICommandHandler,
   IEventHandler,
+  isSaga,
   isTelegraphCommandHandler,
+  isTelegraphEventHandler,
+  SagaEndMetadata,
+  SagaEventHandlerMetadata,
   SagaMetadata,
+  SagaStartMetadata,
 } from '@telegraph/nestjs';
-import { COMMAND_HANDLER_METADATA, EVENT_HANDLER_METADATA, SAGA_METADATA } from '../decorators/constants';
+import {
+  COMMAND_HANDLER_METADATA,
+  EVENT_HANDLER_METADATA,
+  SAGA_END_METADATA,
+  SAGA_EVENT_HANDLER,
+  SAGA_METADATA,
+  SAGA_START_METADATA,
+} from '../decorators/constants';
+import { EventPayloadAssociationResolver, SagaEventHandlerDefinition, SagaManager } from '@telegraph/sagas';
 
 @Injectable()
 export class ExplorerService {
@@ -24,7 +38,11 @@ export class ExplorerService {
   private eventHandlers: Array<{ metadata: EventHandlerMetadata; instanceWrapper: InstanceWrapper }> = [];
   private sagas: Array<{ metadata: SagaMetadata; instanceWrapper: InstanceWrapper }> = [];
 
-  constructor(private readonly discovery: DiscoveryService, private readonly moduleRef: ModuleRef) {
+  constructor(
+    private readonly discovery: DiscoveryService,
+    private readonly moduleRef: ModuleRef,
+    private readonly sagaManager: SagaManager
+  ) {
     this.scan();
   }
 
@@ -51,7 +69,7 @@ export class ExplorerService {
   }
 
   registerCommandHandlers() {
-    this.commandHandlers.forEach(({ metadata, instanceWrapper}) => {
+    this.commandHandlers.forEach(({ metadata, instanceWrapper }) => {
       const instance: ICommandHandler<any> = this.moduleRef.get(instanceWrapper.token, { strict: false });
 
       if (!instance) {
@@ -73,47 +91,97 @@ export class ExplorerService {
   }
 
   registerSagas() {
-    this.sagas.forEach(({metadata, instanceWrapper}) => {
+    this.sagas.forEach(({ metadata, instanceWrapper }) => {
+      console.log('registering saga', metadata.id);
 
-    })
+
+      // fixme: assert saga has start and end
+
+      metadata.eventHandlers.forEach(({ propertyName }) => {
+        const sagaEventHandlerMetadata: SagaEventHandlerMetadata | null = Reflect.getMetadata(
+          SAGA_EVENT_HANDLER,
+          (instanceWrapper.token as any).prototype,
+          propertyName
+        );
+        const sagaStartMetadata: SagaStartMetadata | null = Reflect.getMetadata(
+          SAGA_START_METADATA,
+          (instanceWrapper.token as any).prototype,
+          propertyName
+        );
+        const sagaEndMetadata: SagaEndMetadata | null = Reflect.getMetadata(
+          SAGA_END_METADATA,
+          (instanceWrapper.token as any).prototype,
+          propertyName
+        );
+
+        if (!sagaEventHandlerMetadata && sagaStartMetadata) {
+          throw new Error(`Saga ${metadata.sagaId} has a start method but no event handler metadata`);
+        }
+
+        if (!sagaEventHandlerMetadata && sagaEndMetadata) {
+          throw new Error(`Saga ${metadata.sagaId} has an end method but no event handler metadata`);
+        }
+
+        if (!sagaEventHandlerMetadata) {
+          return;
+        }
+
+        const definition: SagaEventHandlerDefinition = {
+          sagaId: metadata.sagaId,
+          eventName: sagaEventHandlerMetadata.eventName,
+          sagaStart: !!sagaStartMetadata,
+          sagaEnd: !!sagaEndMetadata,
+          initialState: sagaStartMetadata?.initialState, // only if sagaStart is true
+          associationResolver: new EventPayloadAssociationResolver(sagaEventHandlerMetadata.associationField),
+          callback: async (params) => {
+            console.log('saga event handler callback', params);
+          },
+        };
+
+        this.sagaManager.register(definition);
+      });
+    });
   }
 
   private scan() {
     const providers = this.discovery.getProviders();
 
-    providers
-      .filter((x) => isTelegraphCommandHandler(x.token))
-      .forEach((provider) => {
-        const eventHandlerMeta: EventHandlerMetadata = Reflect.getMetadata(EVENT_HANDLER_METADATA, provider.token);
-        const commandHandlerMeta: CommandHandlerMetadata = Reflect.getMetadata(
-          COMMAND_HANDLER_METADATA,
-          provider.token
-        );
-        const sagaMeta: SagaMetadata = Reflect.getMetadata(SAGA_METADATA, provider.token);
+    providers.forEach((provider) => {
+      if (isTelegraphCommandHandler(provider.token)) {
+        const metadata = Reflect.getMetadata(COMMAND_HANDLER_METADATA, provider.token);
 
-        if (eventHandlerMeta) {
-          const existing = this.eventHandlers.find((x) => x.metadata.id === eventHandlerMeta.id);
+        if (metadata) {
+          const existing = this.commandHandlers.find((x) => x.metadata.id === metadata.id);
 
           if (!existing) {
-            this.eventHandlers.push({ metadata: eventHandlerMeta, instanceWrapper: provider });
+            this.commandHandlers.push({ metadata, instanceWrapper: provider });
           }
         }
+      }
 
-        if (commandHandlerMeta) {
-          const existing = this.commandHandlers.find((x) => x.metadata.id === commandHandlerMeta.id);
+      if (isTelegraphEventHandler(provider.token)) {
+        const metadata = Reflect.getMetadata(EVENT_HANDLER_METADATA, provider.token);
+
+        if (metadata) {
+          const existing = this.eventHandlers.find((x) => x.metadata.id === metadata.id);
 
           if (!existing) {
-            this.commandHandlers.push({ metadata: commandHandlerMeta, instanceWrapper: provider });
+            this.eventHandlers.push({ metadata, instanceWrapper: provider });
           }
         }
+      }
 
-        if (sagaMeta) {
-          const existing = this.sagas.find((x) => x.metadata.id === sagaMeta.id);
+      if (isSaga(provider.token)) {
+        const metadata = Reflect.getMetadata(SAGA_METADATA, provider.token);
+
+        if (metadata) {
+          const existing = this.sagas.find((x) => x.metadata.id === metadata.id);
 
           if (!existing) {
-            this.sagas.push({ metadata: sagaMeta, instanceWrapper: provider });
+            this.sagas.push({ metadata, instanceWrapper: provider });
           }
         }
-      });
+      }
+    });
   }
 }

@@ -5,6 +5,7 @@ import { SAGA_START_METADATA } from './constants';
 export interface SagaStartMetadata {
   id: string;
   sagaId: string;
+  initialState: any;
 }
 
 export interface SagaStartOptions<T> {
@@ -17,6 +18,7 @@ export function SagaStart<T>(options: SagaStartOptions<T>) {
       const metadata: SagaStartMetadata = {
         id: uuid.v4(),
         sagaId: target.constructor.name,
+        initialState: options.initialState,
       };
 
       Reflect.defineMetadata(SAGA_START_METADATA, metadata, target, key);

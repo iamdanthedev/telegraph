@@ -47,6 +47,14 @@
         "lintFilePatterns": ["packages/examples/nestjs-example/**/*.ts"]
       }
     },
+    "check-errors": {
+      "executor": "@nrwl/workspace:run-commands",
+      "options": {
+        "commands": ["../../../node_modules/.bin/tsc -b tsconfig.app.json --incremental"],
+        "cwd": "packages/examples/nestjs-example",
+        "parallel": true
+      }
+    },
     "test": {
       "executor": "@nrwl/jest:jest",
       "outputs": ["coverage/packages/examples/nestjs-example"],
