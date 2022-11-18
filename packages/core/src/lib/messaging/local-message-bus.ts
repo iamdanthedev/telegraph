@@ -1,7 +1,8 @@
-import { filter, Observable, single, Subject } from 'rxjs';
+import { filter, Observable, Subject } from 'rxjs';
 import { Logger } from '../logging/logger';
 import { LoggerFactory } from '../logging/logger-factory';
 import { MessageBus } from './message-bus';
+import { MessagingTransport } from './messaging-transport';
 import { Message } from '../messaging/message';
 import { Registration } from '../common/registration';
 import { MessageListenerDefinition } from './message-listener-definition';
@@ -10,6 +11,7 @@ import { UnitOfWorkFactory } from '../unit-of-work/unit-of-work-factory';
 export class LocalMessageBus implements MessageBus {
   private stream: Subject<Message<any>>;
   private logger: Logger;
+  private transports: MessagingTransport[] = [];
 
   constructor(private readonly loggerFactory: LoggerFactory, private readonly unitOfWorkFactory: UnitOfWorkFactory) {
     this.logger = loggerFactory.create('LocalMessageBus');
@@ -20,6 +22,12 @@ export class LocalMessageBus implements MessageBus {
   publish(message: Message<any>): Promise<void> {
     this.stream.next(message);
     return Promise.resolve();
+  }
+
+  registerTransport(transport: MessagingTransport) {
+    this.transports.push(transport);
+    transport.listener.subscribe(this.stream);
+    this.stream.subscribe(transport.publisher);
   }
 
   registerListener<T extends Message = any>(listener: MessageListenerDefinition<T>): Registration {
