@@ -28,5 +28,5 @@
     "appsDir": "packages",
     "libsDir": "packages"
   },
-  "defaultProject": "basic-example-1"
+  "defaultProject": "examples-telegraph-core-example"
 }
